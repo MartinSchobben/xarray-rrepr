@@ -1,0 +1,100 @@
+[project]
+authors = [{ name = "Martin Schobben", email = "martin.schobben@tuwien.ac.at" }]
+name = "xarray_rrepr"
+version = "0.1.0"
+description = "my project description"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "pooch>=1.8.2",
+    "pyperclip>=1.11.0",
+    "scipy>=1.15.3",
+    "xarray>=2025.6.1",
+]
+classifiers = [
+    "Intended Audience :: Science/Research",
+    "Topic :: Scientific/Engineering",
+    "Topic :: Scientific/Engineering :: GIS",
+    "Topic :: Software Development :: Libraries",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Operating System :: POSIX",
+    "Natural Language :: English",
+]
+
+[build-system]
+requires = ["uv_build>=0.9.17,<0.10.0"]
+build-backend = "uv_build"
+
+
+[dependency-groups]
+# Unlike optional dependencies, development dependencies are local-only
+# and will not be included in the project requirements when
+# published to PyPI or other indexes
+dev = [
+ "ipykernel>=7.1.0",
+ "mystmd>=1.6.6",
+ "pooch>=1.8.2",
+ "pytest>=9.0.1",
+ "pytest-cov>=7.0.0",
+ "ruff>=0.14.5",
+ "scipy>=1.15.3",
+ "ty>=0.0.1a27",
+]
+
+
+# NOTE: Uncomment the next section to add pre-built wheel files of non-python
+# libraries to your project. In this example GDAL has been choosen.
+# Read more at:
+# https://github.com/astral-sh/uv/issues/11466
+#
+# [[tool.uv.index]]
+# name = "girder"
+# url = "https://girder.github.io/large_image_wheels"
+# explicit = true
+#
+# [tool.uv.sources]
+# gdal = { index = "girder" }
+
+
+[tool.ruff]
+# Same as Black.
+line-length = 88
+indent-width = 4
+
+
+[tool.ruff.lint]
+select = ["ALL"]
+ignore = [
+    "COM812",  # missing-trailing-comma (may conflict with ruff formatter)
+    "D203",    # incorrect-blank-line-before-class (conflicts with D211)
+    "D213",    # multi-line-summary-second-line (conflicts with D212)
+]
+fixable = ["ALL"]
+unfixable = []
+
+
+[tool.ruff.lint.per-file-ignores]
+"__init__.py" = ["E402"]
+"**/{tests}/*" = ["E402", "ANN201", "D", "INP001", "S101"]
+
+
+[tool.ruff.format]
+# Same as Black.
+quote-style = "double"
+indent-style = "space"
+skip-magic-trailing-comma = false
+line-ending = "auto"
+docstring-code-format = false
+docstring-code-line-length = "dynamic"
+
+
+[tool.pytest.ini_options]
+addopts = "--cov=xarray_rrepr --cov-report term-missing -rsx --verbose --color=yes"
+approvaltests_geo_data_root = ""
+approvaltests_geo_input = "input//"
+approvaltests_geo_approved = "approved//"
+
+[tool.coverage.run]
+relative_files = true

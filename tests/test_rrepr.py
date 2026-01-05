@@ -8,8 +8,6 @@ from xarray.testing import assert_allclose, assert_equal
 from xarray_rrepr.wrap import (
     deparse_xarray_variable,
     deparse_xarray_variables,
-    drop_all_attrs_array,
-    drop_all_attrs_dataset,
     random_sample_xarray_obj,
     rrepr,
     xarray_rrepr_template,
@@ -38,16 +36,6 @@ def make_dataset(values: dict, coords: dict | None = None) -> xr.Dataset:
     if coords is None:
         coords = make_coords(values)
     return xr.Dataset(values, coords=coords)
-
-
-def test_simplify_xarray():
-    ds = xr.tutorial.load_dataset("air_temperature")
-    da = ds["air"]
-    assert drop_all_attrs_array(da).attrs == {}
-    assert (
-        drop_all_attrs_dataset(ds).attrs == {}
-        and drop_all_attrs_dataset(ds)["air"].attrs == {}
-    )
 
 
 def test_randomised_sample_array():

@@ -110,7 +110,6 @@ xr.Dataset(
 import subprocess
 
 import numpy as np
-import pyperclip
 import xarray as xr
 from numpy.random import MT19937, RandomState, SeedSequence
 from numpy.typing import ArrayLike
@@ -226,9 +225,7 @@ def rrepr(
         raise TypeError(msg)
     code_string = xarray_rrepr_template(xarray_type, data_expr, coords_expr)
     code_string_with_numpy_import = code_string.replace("array", "np.array")
-    ruff_formatted_code_string = ruff_format(code_string_with_numpy_import)
-    pyperclip.copy(ruff_formatted_code_string)
-    return ruff_formatted_code_string
+    return ruff_format(code_string_with_numpy_import)
 
 
 def random_sample_dims(

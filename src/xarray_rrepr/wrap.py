@@ -1,8 +1,120 @@
+"""xarray-rrepr: A utility for concise, minimal, reproducible xarray representations.
+
+This module provides a monkey-patching utility to replace the default ``__repr__``
+method of xarray ``Dataset`` and ``DataArray`` objects. The new representation
+generates a minimised, randomly-sampled version of the object, which can be used for
+debugging, logging, or displaying examples of large datasets
+in a clean and readable format without overwhelming the console output.
+
+The core functionality is built from several utility functions that handle
+sampling, deparsing, and formatting, which can also be used independently.
+
+Core Representation and Sampling Functions
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+These functions form the core engine for creating and manipulating the
+minimised representations.
+
+rrepr(obj, size=2, seed=None)
+    The main public function to generate the minimised, random string
+    representation for a given xarray Dataset or DataArray.
+
+random_sample_xarray_obj(obj, size, seed=None)
+    Generates a new, smaller xarray object by randomly sampling from each dimension.
+
+random_sample_dims(obj, size, seed=None)
+    Calculates random sampling indices from dimensions of given sizes.
+
+Deparsing and Formatting Utilities
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+These utilities handle the conversion of xarray objects into valid Python
+code strings and the final formatting of the output.
+
+deparse_xarray_variable(var)
+    Converts a dictionary representing an xarray Variable into a ``repr`` string.
+    Formatted as a valid Python code snippet (e.g., ``"var": (dims, data)``)
+
+deparse_xarray_variables(vars)
+    Converts a dictionary representing an xarray Dataset (``xarray.Dataset.to_dict()``)
+    into a ``repr`` string representations.
+
+xarray_rrepr_template(xarray_type, data, coords)
+    Formats the final, complete string for the minimised xarray object,
+    wrapping it in a template that includes coordinates and data variables.
+
+Code Formatting Utility
+~~~~~~~~~~~~~~~~~~~~~~
+
+Utility for ensuring consistent code style in the generated output.
+
+ruff_format(code_string)
+    Applies code formatting (using the `ruff` formatter) to a generated
+    code string to ensure consistent style.
+
+The typical workflow is to patch the representations at the beginning of a
+session or script to see simplified outputs.
+
+Examples
+--------
+>>> import numpy as np
+>>> import xarray as xr
+>>> rom xarray_rrepr.wrap import rrepr
+
+Now, create a large dataset. Inspecting it will automatically use the
+new, minimised representation.
+
+>>> large_ds = xr.Dataset(
+...     {
+...         "temperature": (["time", "lat", "lon"], np.random.rand(100, 180, 360)),
+...         "pressure": (["time", "lat", "lon"], np.random.rand(100, 180, 360)),
+...     },
+...     coords={
+...         "time": np.arange("2020-01-01", "2020-04-10", dtype="datetime64[D]"),
+...         "lat": np.linspace(-90, 90, 180),
+...         "lon": np.linspace(-180, 180, 360),
+...     },
+... )
+
+>>> # The output will be a much smaller, random sample of the dataset
+>>> print(rrepr(large_ds, seed=42))
+xr.Dataset(
+    {
+        "temperature": (
+            ("time", "lat", "lon"),
+            np.array([[[0.9, 1.0], [1.0, 0.3]], [[0.3, 0.8], [0.6, 0.9]]]),
+        ),
+        "pressure": (
+            ("time", "lat", "lon"),
+            np.array([[[0.4, 0.4], [0.8, 1.0]], [[0.1, 0.9], [0.2, 0.4]]]),
+        ),
+    },
+    coords={
+        "time": (
+            ("time",),
+            np.array(
+                [
+                    datetime.datetime(2020, 3, 9, 0, 0),
+                    datetime.datetime(2020, 1, 11, 0, 0),
+                ],
+                dtype=object,
+            ),
+        ),
+        "lat": (("lat",), np.array([-25.6, -54.8])),
+        "lon": (("lon",), np.array([-55.7, 54.7])),
+    },
+)
+
+"""
+
 import subprocess
 
 import numpy as np
 import pyperclip
 import xarray as xr
+from numpy.random import MT19937, RandomState, SeedSequence
+from numpy.typing import ArrayLike
+from xarray.core.common import AbstractArray, DataWithCoords
 
 
 def rrepr(
@@ -52,12 +164,9 @@ def rrepr(
 
     Examples
     --------
-    First, let's monkey patch the ``__repr__`` method of an `xarray.Dataset`.
-
     >>> import numpy as np
     >>> import xarray as xr
-    >>> from your_module import _repr_minimised
-    >>> xr.Dataset.__repr__ = _repr_minimised
+    >>> rom xarray_rrepr.wrap import rrepr
 
     Now, create a large dataset. Inspecting it will automatically use the
     new, minimised representation.
@@ -113,7 +222,8 @@ def rrepr(
         xarray_type = "xr.Dataset"
         data_expr = deparse_xarray_variables(resampled_obj["data_vars"])
     else:
-        raise TypeError("Unknown data type")
+        msg = "Unknown data type"
+        raise TypeError(msg)
     code_string = xarray_rrepr_template(xarray_type, data_expr, coords_expr)
     code_string_with_numpy_import = code_string.replace("array", "np.array")
     ruff_formatted_code_string = ruff_format(code_string_with_numpy_import)
@@ -121,46 +231,65 @@ def rrepr(
     return ruff_formatted_code_string
 
 
-def random_sample_dims(obj, dim, size, seed):
-    rng = np.random.default_rng(seed=seed)
-    return rng.choice(np.arange(obj.sizes[dim]), size=size, replace=False)
+def random_sample_dims(
+    obj: xr.DataArray | xr.Dataset, size: int, seed: int | None
+) -> ArrayLike:
+    """Calculate random sampling indices from dimensions of given sizes."""
+    rng = RandomState(MT19937(SeedSequence(seed)))
+    max_id = np.array(list(obj.sizes.values()))[..., np.newaxis]
+    return rng.randint(max_id, size=(len(obj.sizes), size))
 
 
 def random_sample_xarray_obj(
-    obj: xr.DataArray | xr.Dataset, size: int = 2, seed=None
+    obj: xr.DataArray | xr.Dataset, size: int, seed: int | None = None
 ) -> xr.DataArray | xr.Dataset:
-    indices = {
-        dim: random_sample_dims(
-            obj=obj, dim=dim, size=size, seed=n + seed if seed else None
-        )
-        for n, dim in enumerate(obj.sizes.keys())
-    }
-    return obj.isel(indices)
+    """Generate a new, smaller xarray object by randomly sampling from each
+    dimension.
+    """  # noqa: D205
+    indices = random_sample_dims(obj=obj, size=size, seed=seed)
+    indices_dict = dict(zip(obj.sizes.keys(), indices, strict=True))
+    return obj.isel(indices_dict)
 
 
-def deparse_xarray_variable(var: dict):
-    var_data = round_float_array(var["data"])
-    return (var["dims"], var_data)
+def deparse_xarray_variable(variable: dict) -> DataWithCoords:
+    """Convert a dictionary representing an xarray Variable into a ``repr``
+    string. Formatted as a valid Python code snippet (e.g., ``"var":
+    (dims, data)``).
+    """  # noqa: D205
+    var_data = round_float_array(variable["data"])
+    return (variable["dims"], var_data)
 
 
-def round_float_array(arr, ndigits=1):
+def round_float_array(arr: ArrayLike, ndigits: int = 1) -> ArrayLike:
+    """Round numpy array with float values."""
     arr = np.asarray(arr)
     if np.issubdtype(arr.dtype, np.floating):
         return np.round(arr, ndigits)
     return arr
 
 
-def deparse_xarray_variables(vars: dict):
-    return {name: deparse_xarray_variable(var) for name, var in vars.items()}
+def deparse_xarray_variables(variables: dict) -> DataWithCoords:
+    """Convert a dictionary representing an xarray Dataset
+    (``xarray.Dataset.to_dict()``) into a ``repr`` string representations.
+    """  # noqa: D205
+    return {name: deparse_xarray_variable(var) for name, var in variables.items()}
 
 
-def xarray_rrepr_template(xarray_type, data, coords):
+def xarray_rrepr_template(
+    xarray_type: str, data: AbstractArray | DataWithCoords, coords: DataWithCoords
+) -> str:
+    """Format the final, complete string for the minimised xarray object,
+    wrapping it in a template that includes coordinates and data variables.
+    """  # noqa: D205
     return f"{xarray_type}({data!r}, coords={coords!r})"
 
 
-def ruff_format(code_string):
+def ruff_format(code_string: str) -> str:
+    """Apply code formatting (using the `ruff` formatter) to a generated
+    code string to ensure consistent style.
+    """  # noqa: D205
     result = subprocess.run(
-        [
+        [  # noqa: S607
             "ruff",
             "format",
             "-",

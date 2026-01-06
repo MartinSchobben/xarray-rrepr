@@ -1,13 +1,16 @@
 import string
 
 import numpy as np
+import numpy.testing as np_test
 import pandas as pd
 import xarray as xr
-from xarray.testing import assert_allclose, assert_equal
+import xarray.testing as xr_test
+from numpy.typing import ArrayLike
 
 from xarray_rrepr.wrap import (
     deparse_xarray_variable,
     deparse_xarray_variables,
+    random_sample_dims,
     random_sample_xarray_obj,
     rrepr,
     xarray_rrepr_template,
@@ -17,13 +20,12 @@ alphabet_string = string.ascii_lowercase
 alphabet_array = np.array(list(alphabet_string))
 
 
-def make_coords(values) -> dict:
+def make_coords(values: ArrayLike) -> dict:
     array = np.array(values)
-    coords = {
+    return {
         alphabet_array[dim].__str__(): np.arange(array.shape[dim])
         for dim in np.arange(array.ndim)
     }
-    return coords
 
 
 def make_array(values: list, coords: dict | None = None) -> xr.DataArray:
@@ -48,12 +50,15 @@ def test_randomised_sample_array():
             [21, 22, 23, 24, 25],
         ]
     )
+    result = random_sample_dims(da, size=3, seed=42)
+    np_test.assert_equal(result, np.array([[2, 0, 4], [2, 0, 3]], dtype=np.int64))
+
     result = random_sample_xarray_obj(da, size=3, seed=42)
-    assert_equal(
+    xr_test.assert_equal(
         result,
         make_array(
-            [[25, 23, 22], [5, 3, 2], [20, 18, 17]],
-            coords={"a": [4, 0, 3], "b": [4, 2, 1]},
+            [[13, 11, 14], [3, 1, 4], [23, 21, 24]],
+            coords={"a": [2, 0, 4], "b": [2, 0, 3]},
         ),
     )
 
@@ -61,7 +66,7 @@ def test_randomised_sample_array():
 def test_randomised_sample_dataset():
     ds = xr.tutorial.load_dataset("air_temperature")
     result = random_sample_xarray_obj(ds, size=3, seed=42)
-    assert_allclose(
+    xr_test.assert_allclose(
         result,
         make_dataset(
             {
@@ -69,19 +74,19 @@ def test_randomised_sample_dataset():
                     ["time", "lat", "lon"],
                     [
                         [
-                            [272.9, 279.79, 273.2],
-                            [292.79, 286.7, 286.4],
-                            [273.29, 280.29, 273.6],
+                            [294.9, 299.7, 295.1],
+                            [269.29, 259.79, 271.4],
+                            [269.29, 259.79, 271.4],
                         ],
                         [
-                            [271.6, 275.29, 270.6],
-                            [287.7, 284.79, 277.6],
-                            [272.2, 276.1, 271.1],
+                            [296.4, 300.5, 296.79],
+                            [274.5, 273.29, 275.6],
+                            [274.5, 273.29, 275.6],
                         ],
                         [
-                            [284.5, 285.6, 293.9],
-                            [297.7, 291.6, 297.79],
-                            [288.79, 286.79, 294.0],
+                            [295.2, 298.9, 294.79],
+                            [260.2, 248.89, 263.1],
+                            [260.2, 248.89, 263.1],
                         ],
                     ],
                 )
@@ -89,13 +94,13 @@ def test_randomised_sample_dataset():
             coords={
                 "time": pd.to_datetime(
                     [
-                        "2014-04-23T18:00:00.000000000",
-                        "2013-03-07T00:00:00.000000000",
-                        "2014-07-19T18:00:00.000000000",
+                        "2014-04-03T12:00:00.000000000",
+                        "2013-06-20T00:00:00.000000000",
+                        "2013-01-28T00:00:00.000000000",
                     ]
                 ),
-                "lat": [50.0, 37.5, 47.5],
-                "lon": [307.5, 215.0, 285.0],
+                "lat": [15.0, 67.5, 67.5],
+                "lon": [327.5, 287.5, 330.0],
             },
         ),
     )
@@ -215,9 +220,9 @@ def test_randomised_repr_array():
         ]
     )
     result = rrepr(da, size=3, seed=42)
-    expected = "xr.DataArray(\n    np.array([[25, 23, 22], [5, 3, 2], [20, 18, 17]]),\n"
-    expected += '    coords={"a": (("a",), np.array([4, 0, 3])), "b": (("b",),'
-    expected += " np.array([4, 2, 1]))},\n)\n"
+    expected = "xr.DataArray(\n    np.array([[13, 11, 14], [3, 1, 4], [23, 21, 24]]),\n"
+    expected += '    coords={"a": (("a",), np.array([2, 0, 4])), "b": (("b",),'
+    expected += " np.array([2, 0, 3]))},\n)\n"
     assert result == expected
 
 
@@ -228,47 +233,45 @@ def test_randomised_repr_dataset():
         'xr.Dataset(\n    {\n        "air": (\n            ("time", "lat", "lon"),\n'
     )
     expected += "            np.array(\n                [\n                    [\n"
-    expected += "                        [279.0, 276.9, 273.9, 275.0, 277.6],\n"
-    expected += "                        [299.1, 299.6, 301.2, 301.9, 298.9],\n"
-    expected += "                        [285.0, 285.5, 286.8, 292.5, 281.6],\n"
-    expected += "                        [289.7, 291.5, 293.6, 290.6, 297.7],\n"
-    expected += "                        [286.6, 286.7, 287.6, 289.5, 286.3],\n"
+    expected += "                        [257.6, 255.5, 239.6, 267.0, 255.5],\n"
+    expected += "                        [290.2, 291.4, 295.4, 292.7, 294.5],\n"
+    expected += "                        [257.6, 255.5, 239.6, 267.0, 255.5],\n"
+    expected += "                        [291.5, 292.7, 296.7, 293.4, 295.4],\n"
+    expected += "                        [286.2, 284.7, 291.7, 289.8, 289.3],\n"
     expected += "                    ],\n                    [\n"
-    expected += "                        [241.4, 258.5, 250.2, 247.9, 263.8],\n"
-    expected += "                        [297.2, 297.4, 300.3, 301.1, 300.0],\n"
-    expected += "                        [271.5, 278.0, 273.2, 274.6, 271.2],\n"
-    expected += "                        [286.6, 289.6, 285.6, 282.1, 291.2],\n"
-    expected += "                        [278.4, 279.9, 272.0, 275.0, 274.2],\n"
+    expected += "                        [291.4, 292.7, 276.0, 273.4, 271.9],\n"
+    expected += "                        [290.8, 293.4, 301.9, 296.9, 297.0],\n"
+    expected += "                        [291.4, 292.7, 276.0, 273.4, 271.9],\n"
+    expected += "                        [291.1, 293.6, 300.7, 297.0, 297.3],\n"
+    expected += "                        [291.1, 292.9, 301.3, 293.9, 294.1],\n"
     expected += "                    ],\n                    [\n"
-    expected += "                        [258.2, 261.2, 251.0, 249.4, 262.8],\n"
-    expected += "                        [297.0, 296.1, 300.5, 300.4, 298.7],\n"
-    expected += "                        [274.6, 279.2, 269.8, 263.5, 270.9],\n"
-    expected += "                        [286.1, 285.3, 283.7, 276.2, 291.5],\n"
-    expected += "                        [278.4, 280.0, 271.7, 265.2, 273.5],\n"
+    expected += "                        [241.3, 241.5, 242.3, 257.1, 250.2],\n"
+    expected += "                        [288.9, 290.9, 294.1, 292.8, 295.2],\n"
+    expected += "                        [241.3, 241.5, 242.3, 257.1, 250.2],\n"
+    expected += "                        [290.9, 292.2, 296.0, 294.0, 295.9],\n"
+    expected += "                        [283.8, 283.8, 285.4, 291.9, 288.5],\n"
     expected += "                    ],\n                    [\n"
-    expected += "                        [240.7, 243.4, 248.9, 248.9, 257.3],\n"
-    expected += "                        [297.2, 295.4, 297.8, 299.8, 298.9],\n"
-    expected += "                        [274.6, 275.1, 270.1, 267.4, 267.5],\n"
-    expected += "                        [283.4, 282.6, 278.6, 274.1, 285.2],\n"
-    expected += "                        [277.7, 275.3, 268.9, 270.4, 269.7],\n"
+    expected += "                        [278.1, 281.3, 272.9, 273.5, 272.3],\n"
+    expected += "                        [294.3, 295.9, 302.0, 297.9, 299.6],\n"
+    expected += "                        [278.1, 281.3, 272.9, 273.5, 272.3],\n"
+    expected += "                        [293.1, 295.6, 301.3, 297.6, 299.7],\n"
+    expected += "                        [293.7, 295.6, 293.1, 297.6, 297.0],\n"
     expected += "                    ],\n                    [\n"
-    expected += "                        [256.7, 258.6, 239.9, 237.7, 263.8],\n"
-    expected += "                        [299.4, 298.8, 302.7, 302.4, 301.2],\n"
-    expected += "                        [279.8, 280.0, 264.4, 265.7, 272.4],\n"
-    expected += "                        [289.2, 291.7, 277.5, 272.0, 290.4],\n"
-    expected += "                        [283.3, 281.0, 265.8, 262.1, 276.9],\n"
+    expected += "                        [252.2, 248.0, 246.2, 265.4, 250.6],\n"
+    expected += "                        [293.5, 293.4, 291.6, 295.4, 297.8],\n"
+    expected += "                        [252.2, 248.0, 246.2, 265.4, 250.6],\n"
+    expected += "                        [292.8, 295.1, 292.9, 295.1, 298.5],\n"
+    expected += "                        [289.5, 287.7, 281.6, 291.4, 294.0],\n"
     expected += "                    ],\n                ]\n            ),\n        )\n"
-    expected += (
-        '    },\n    coords={\n        "lat": (("lat",), np.array([72.5, 15.0, 52.5,'
-    )
-    expected += ' 40.0, 50.0])),\n        "lon": (("lon",), np.array([232.5, 215.0,'
-    expected += ' 287.5, 280.0, 302.5])),\n        "time": (\n'
+    expected += '    },\n    coords={\n        "lat": (("lat",), np.array([67.5, 27.5,'
+    expected += ' 67.5, 25.0, 37.5])),\n        "lon": (("lon",), np.array([225.0,'
+    expected += ' 217.5, 267.5, 325.0, 312.5])),\n        "time": (\n'
     expected += '            ("time",),\n            np.array(\n'
-    expected += "                [\n                    datetime.datetime(2014, 7,"
-    expected += " 19, 6, 0),\n                    datetime.datetime(2013, 11,"
-    expected += " 17, 6, 0),\n                    datetime.datetime(2014, 4,"
-    expected += " 23, 12, 0),\n                    datetime.datetime(2013, 3,"
-    expected += " 7, 0, 0),\n                    datetime.datetime(2013, 11,"
-    expected += " 13, 0, 0),\n                ],\n                dtype=object,\n"
+    expected += "                [\n                    datetime.datetime(2014, 4,"
+    expected += " 3, 12, 0),\n                    datetime.datetime(2013, 6,"
+    expected += " 20, 0, 0),\n                    datetime.datetime(2013, 1,"
+    expected += " 28, 0, 0),\n                    datetime.datetime(2014, 8,"
+    expected += " 14, 12, 0),\n                    datetime.datetime(2014, 11,"
+    expected += " 28, 18, 0),\n                ],\n                dtype=object,\n"
     expected += "            ),\n        ),\n    },\n)\n"
     assert result == expected

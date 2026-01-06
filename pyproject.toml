@@ -75,7 +75,7 @@ unfixable = []
 
 [tool.ruff.lint.per-file-ignores]
 "__init__.py" = ["E402"]
-"**/{tests}/*" = ["E402", "ANN201", "D", "INP001", "S101"]
+"**/{tests}/*" = ["E402", "ANN201", "D", "INP001", "S101", "PLR0915"]
 
 
 [tool.ruff.format]
@@ -90,9 +90,6 @@ docstring-code-line-length = "dynamic"
 
 [tool.pytest.ini_options]
 addopts = "--cov=xarray_rrepr --cov-report term-missing -rsx --verbose --color=yes"
-approvaltests_geo_data_root = ""
-approvaltests_geo_input = "input//"
-approvaltests_geo_approved = "approved//"
 
 [tool.coverage.run]
 relative_files = true

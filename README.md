@@ -4,9 +4,9 @@
 
 | Name                              |    Stmts |     Miss |   Cover |   Missing |
 |---------------------------------- | -------: | -------: | ------: | --------: |
-| src/xarray\_rrepr/\_\_init\_\_.py |        3 |        0 |    100% |           |
+| src/xarray\_rrepr/\_\_init\_\_.py |        4 |        0 |    100% |           |
 | src/xarray\_rrepr/wrap.py         |       45 |        3 |     93% |224-225, 301 |
-| **TOTAL**                         |   **48** |    **3** | **94%** |           |
+| **TOTAL**                         |   **49** |    **3** | **94%** |           |
 
 
 ## Setup coverage badge

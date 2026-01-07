@@ -23,6 +23,8 @@ import pyperclip
 import xarray as xr
 from xarray.testing import assert_allclose
 from xarray_rrepr import rrepr
+
+xr.set_options(display_style="text")
 ```
 
 Let's use xarray example dataset "air_temperature" loaded as an xarray ``Dataset``.

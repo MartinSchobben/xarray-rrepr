@@ -122,11 +122,11 @@ def rrepr(
     """Generate a minimised and randomised string representation of the object.
 
     This method is designed to be monkey-patched onto `xarray.Dataset` and
-    `xarray.DataArray` objects. It provides a concise representation that
-    captures the structure of a larger object by subsampling its dimensions
-    and data. This is particularly useful for unit tests, debugging, logging,
-    or displaying examples in documentation about large datasets in a more
-    readable format.
+    `xarray.DataArray` and `xarray.Dataset` objects. It provides a concise
+    representation that captures the structure of a larger object by subsampling
+    its dimensions and data. This is particularly useful for unit tests,
+    debugging, logging, or displaying examples in documentation about large
+    datasets in a more readable format.
 
     The representation works by:
     1.  Randomly selecting a small, contiguous slice from each dimension.

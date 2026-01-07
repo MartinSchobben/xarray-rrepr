@@ -1,0 +1,70 @@
+---
+title: Minimised, Random String Representation for Xarray
+format: gfm
+jupyter: python3
+---
+
+As opposed to ``xarray`` standard string representation ``rrepr`` produces a representation that can be evaluated. However the object is a minimised random subsample of the original xarray object. It can therefore be used as faithful excerpts for creating easily readible unit tests and example use cases in documentation of otherwise unpractically large datasets.
+
+## Installation
+
+```{bash}
+pip install git+https://github.com/MartinSchobben/xarray-rrepr.git
+```
+
+## Basic Usage
+
+This example showcases the two prime characteristics of the ``rrepr`` method that distinguishes it from the orignal xarray ``repr`` method.
+
+```{python}
+import numpy as np
+import datetime
+import pyperclip
+import xarray as xr
+from xarray.testing import assert_allclose
+from xarray_rrepr import rrepr
+```
+
+Let's use xarray example dataset "air_temperature" loaded as an xarray ``Dataset``.
+
+```{python}
+ds = xr.tutorial.load_dataset("air_temperature")
+```
+
+Let's inspect how the string representation differs when printed.
+
+```{python}
+print(repr(ds))
+```
+
+This is the usual output of xarray's ``repr``.
+
+```{python}
+print(rrepr(ds))
+```
+
+We can see that in the case of ``rrepr`` we created an output that looks like how we would create an xarray ``Dataset`` from scratch.
+
+### Evaluate the String Representation
+
+The first characteristics of ``rrepr`` is that it can be evaluated in the context of globals and locals.
+
+```{python}
+eval(rrepr(ds))
+```
+
+Which can't be done with standard ``repr``.
+
+```{python}
+#| error: true
+eval(repr(ds))
+```
+
+### Minimised representation
+
+However, ``rrepr`` is not a true representative string of the xarray object, but, rather a subsample of the original object. This makes it ideal for debugging and testing large datasets as well as create documentation with easily readible and comprehendible code examples.
+
+```{python}
+#| error: true
+assert_allclose(ds, eval(rrepr(ds)))
+```

@@ -1,28 +1,23 @@
+# See docs at: https://mystmd.org/guide/frontmatter
 version: 1
-
-extends:
-  - https://github.com/TUW-GEO/cookiecutter-docs-config/raw/main/myst.yml
-
 project:
-  title: xarray-rrepr
-  authors:
-    - name: Martin Schobben
-  source_url: https://example.com
-  edit_url: https://example.com
-  open_access: true
+  id: 8adbaf78-d1b2-4491-a574-31e4d904e32f
+  # title:
+  # description:
+  # keywords: []
+  # authors: []
+  github: https://github.com/MartinSchobben/xarray-rrepr
+  # To autogenerate a Table of Contents, run "myst init --write-toc"
   toc:
     - file: README.md
     - title: "API"
       children:
-        - file: docs/index.ipynb
+        - file: docs/api.md
     - title: "Developing"
       children:
         - file: CONTRIBUTING.md
-  error_rules:
-    - rule: image-downloads
-      severity: ignore
-    - rule: image-format-converts
-      severity: ignore
-    - rule: link-resolves
-      severity: ignore
-      keys: [] # List links here that will not be checked if they exist
+site:
+  template: book-theme
+  # options:
+  #   favicon: favicon.ico
+  #   logo: site_logo.png
